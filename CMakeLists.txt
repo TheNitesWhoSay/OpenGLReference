@@ -23,6 +23,15 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(stb)
 include_directories(${stb_SOURCE_DIR}/include)
 
+include(FetchContent)
+FetchContent_Declare(
+  rarecpp
+  GIT_REPOSITORY https://github.com/TheNitesWhoSay/RareCpp.git
+  GIT_TAG d437771 # release-2.3.2
+)
+FetchContent_MakeAvailable(rarecpp)
+include_directories(${rarecpp_SOURCE_DIR}/include)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/graphics/)
 
 set(Headers

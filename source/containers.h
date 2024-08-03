@@ -1,10 +1,12 @@
 #pragma once
-#include "graphics/gl/program.h"
-#include "graphics/gl/texture.h"
+#include <gl/program.h>
+#include <gl/texture.h>
+#include <gl/vertices.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 namespace refapp
 {
@@ -35,8 +37,6 @@ namespace refapp
 
         gl::Texture texture0 {};
         gl::Texture texture1 {};
-        GLuint vao = 0;
-        GLuint vbo = 0;
 
         static constexpr GLfloat verticies[] {
             -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
@@ -92,7 +92,7 @@ namespace refapp
 
         void bind()
         {
-            glBindVertexArray(vao);
+            shader.use();
             texture0.bindToSlot(GL_TEXTURE0);
             texture1.bindToSlot(GL_TEXTURE1);
         }
@@ -101,6 +101,7 @@ namespace refapp
 
         Shader shader {};
         float mixPolarity = 0.2f;
+        gl::VertexVector<> verts;
 
         void load()
         {
@@ -109,31 +110,26 @@ namespace refapp
             texture0.bind();
             texture0.loadImage2D("res/texture/container.jpg", gl::Texture::Image2D{.internalformat = GL_RGB, .format = GL_RGB});
             texture0.setMinMagFilters(GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            texture0.setTextureWrap(GL_REPEAT);
             
             texture1.genTexture();
             texture1.bind();
             texture1.loadImage2D("res/texture/awesomeface.png", gl::Texture::Image2D{.internalformat = GL_RGB, .format = GL_RGBA});
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-            glGenVertexArrays(1, &vao);
-            glGenBuffers(1, &vbo);
-            glBindVertexArray(vao);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
-
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
-            glEnableVertexAttribArray(0); // Position
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(GLfloat)));
-            glEnableVertexAttribArray(2); // Texture
+            texture1.generateMipmap();
+            texture1.setTextureWrap(GL_REPEAT);
 
             shader.use();
             shader.texture0.setValue(0);
             shader.texture1.setValue(1);
             shader.mixPolarity.setValue(mixPolarity);
+
+            verts.initialize({
+                gl::VertexAttribute{.size = 3}, // Position.xyz
+                gl::VertexAttribute{.size = 2}  // TexCoord.xy
+            });
+            verts.vertices.insert(verts.vertices.begin(), std::begin(this->verticies), std::end(this->verticies));
+            verts.bind();
+            verts.bufferData(gl::UsageHint::StaticDraw);
         }
 
         void draw()
@@ -152,7 +148,8 @@ namespace refapp
                     model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 
                 shader.model.setMat4(glm::value_ptr(model));
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                verts.bind();
+                verts.drawTriangles();
             }
         }
     };
