@@ -1,15 +1,21 @@
 #pragma once
 #include <glad/glad.h>
 #include <stb_image.h>
+#include "unique_resource.h"
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace gl
 {
-    class Textures
+    class Texture
     {
-        GLuint textures = 0;
-        GLsizei totalTextures = 0;
+        struct Tex {
+            GLuint id = 0;
+            GLenum type = GL_TEXTURE_2D;
+            GLsizei total = 0;
+        };
+        unique_resource<Tex> tex;
 
     public:
 
@@ -22,23 +28,132 @@ namespace gl
             GLint minFilter = GL_NEAREST_MIPMAP_LINEAR;
             GLint magFilter = GL_NEAREST_MIPMAP_LINEAR;
         };
+        
+        Texture(GLenum targetType = GL_TEXTURE_2D) : tex{{.type = targetType}} {}
+        Texture(Texture &&) noexcept = default;
+        Texture & operator=(Texture &&) noexcept = default;
+        operator bool() { return tex->id != 0; }
 
-        Textures(GLsizei totalTextures = 1) : totalTextures(totalTextures) {}
-
-        ~Textures()
+        ~Texture()
         {
-            glDeleteTextures(totalTextures, &textures);
+            if ( tex->total > 0 && tex->id != 0 )
+                glDeleteTextures(tex->total, &tex->id);
         }
 
-        void load(const std::string & filePath, Descriptor && descriptor)
+        bool empty()
         {
-            glGenTextures(totalTextures, &textures);
-            glBindTexture(GL_TEXTURE_2D, textures);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, descriptor.wrapS);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, descriptor.wrapT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, descriptor.minFilter);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, descriptor.magFilter);
+            return tex->total == 0 && tex->id == 0;
+        }
 
+        void swap(Texture & other)
+        {
+            std::swap(tex, other.tex);
+        }
+
+        void genTexture() // Generates a single texture
+        {
+            if ( tex->id != 0 )
+                throw std::runtime_error("Texture already generated!");
+            else if ( tex->total != 1 )
+                tex->total = 1;
+
+            glGenTextures(tex->total, &(tex->id));
+        }
+
+        constexpr GLuint getId() { return tex->id; }
+
+        static std::vector<Texture> genTextures(GLsizei totalTextures, GLenum targetType = GL_TEXTURE_2D) // Generates a collection of totalTextures textures
+        {
+            auto textureIds = std::vector<GLuint>(totalTextures, 0);
+            glGenTextures(totalTextures, &textureIds[0]);
+            std::vector<Texture> textures {};
+            for ( auto textureId : textureIds )
+            {
+                auto & texture = textures.emplace_back(targetType);
+                texture.tex->id = textureId;
+                texture.tex->total = 1;
+            }
+            return textures;
+        }
+
+        static void setActiveSlot(GLenum textureUnit)
+        {
+            glActiveTexture(textureUnit);
+        }
+
+        static void bindDefault(GLenum targetType = GL_TEXTURE_2D)
+        {
+            glBindTexture(targetType, 0);
+        }
+
+        static void bindDefaultToSlot(GLenum textureUnit, GLenum targetType = GL_TEXTURE_2D)
+        {
+            gl::Texture::setActiveSlot(textureUnit);
+            gl::Texture::bindDefault(targetType);
+        }
+
+        void bind()
+        {
+            GL_INVALID_ENUM;
+            glBindTexture(tex->type, tex->id);
+            if ( auto error = glGetError(); error != GL_NO_ERROR ) // GL_INVALID_FRAMEBUFFER_OPERATION = 1286
+                int a = 0;
+        }
+
+        void bindToSlot(GLenum textureUnit)
+        {
+            gl::Texture::setActiveSlot(textureUnit);
+            bind();
+        }
+
+        template <typename T>
+        void setParam(GLenum parameter, T && value)
+        {
+            using type = std::remove_cvref_t<T>;
+
+            if constexpr ( std::is_same_v<type, GLfloat> )
+                glTexParameterf(tex->type, parameter, value);
+            else if constexpr ( std::is_same_v<type, GLint> )
+                glTexParameteri(tex->type, parameter, value);
+            else
+                static_assert(std::is_void_v<T>, "Expected GL float or int!");
+        }
+
+        void setMipmapLevelRange(GLint lowest, GLint highest)
+        {
+            setParam(GL_TEXTURE_BASE_LEVEL, lowest);
+            setParam(GL_TEXTURE_MAX_LEVEL, highest);
+        }
+
+        void setMinMagFilters(GLint minFilter, GLint magFilter)
+        {
+            setParam(GL_TEXTURE_MIN_FILTER, minFilter);
+            setParam(GL_TEXTURE_MAG_FILTER, magFilter);
+        }
+
+        void setMinMagFilters(GLint filter)
+        {
+            setMinMagFilters(filter, filter);
+        }
+
+        struct Image2D // See glTexImage2D documentation for details
+        {
+            const void* data;
+            GLsizei width = 0;
+            GLsizei height = 0;
+            GLint level = 0;
+            GLint internalformat = GL_RGBA;
+            GLenum format = GL_RGBA;
+            GLenum type = GL_UNSIGNED_BYTE;
+        };
+
+        void loadImage2D(Image2D image)
+        {
+            glTexImage2D(tex->type, image.level, image.internalformat, image.width, image.height, 0, image.format, image.type, image.data);
+        }
+
+        void loadImage2D(std::string filePath, Image2D image2d)
+        {
             stbi_set_flip_vertically_on_load(true);
             int width = 0;
             int height = 0;
@@ -47,17 +162,67 @@ namespace gl
             if ( !textureData )
                 throw std::logic_error("Failed to load texture!");
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, descriptor.format, GL_UNSIGNED_BYTE, textureData);
+            image2d.data = textureData;
+            image2d.width = width;
+            image2d.height = height;
+            loadImage2D(image2d);
             stbi_image_free(textureData);
-
-            if ( descriptor.generateMipmap )
-                glGenerateMipmap(GL_TEXTURE_2D);
         }
 
-        void bind(GLenum texture = GL_TEXTURE0)
+        struct SubImage2D // See glTexSubImage2D documentation for details
         {
-            glActiveTexture(texture);
-            glBindTexture(GL_TEXTURE_2D, textures);
+            const void* pixels = nullptr;
+            GLint xoffset = 0;
+            GLint yoffset = 0;
+            GLsizei width = 0;
+            GLsizei height = 0;
+            GLint level = 0;
+            GLenum format = GL_RGBA;
+            GLenum type = GL_UNSIGNED_BYTE;
+        };
+
+        void loadSubImage2D(SubImage2D image)
+        {
+            glTexSubImage2D(tex->type, image.level, image.xoffset, image.yoffset, image.width, image.height, image.format, image.type, image.pixels);
+        }
+
+        struct CompressedImage2D // See glCompressedTexImage2D documentation for details
+        {
+            const void* data = nullptr;
+            GLsizei imageSize = 0;
+            GLsizei width = 0;
+            GLsizei height = 0;
+            GLint level = 0;
+            GLenum internalformat = 0;
+        };
+
+        void loadCompressedImage2D(CompressedImage2D image)
+        {
+            glCompressedTexImage2D(tex->type, image.level, image.internalformat, image.width, image.height, 0, image.imageSize, image.data);
+        }
+
+        struct CompressedSubImage2D // See glCompressedTexSubImage2D documentation for details
+        {
+            const void* data = nullptr;
+            GLsizei imageSize = 0;
+            GLint xoffset = 0;
+            GLint yoffset = 0;
+            GLsizei width = 0;
+            GLsizei height = 0;
+            GLint level = 0;
+            GLenum format = 0;
+        };
+
+        void loadCompressedSubImage2D(CompressedSubImage2D image)
+        {
+            glCompressedTexSubImage2D(tex->type, image.level, image.xoffset, image.yoffset, image.width, image.height, image.format, image.imageSize, image.data);
+        }
+
+        // Releases GL_TEXTURE0 through last (inclusive)
+        static void releaseSlots(GLenum last)
+        {
+            for ( GLenum i = GL_TEXTURE0; i <= last; i++ )
+                gl::Texture::bindDefaultToSlot(i);
         }
     };
 }

@@ -1,9 +1,9 @@
-﻿#include "graphics/glfw/context.h"
-#include "graphics/glfw/window.h"
-#include "graphics/glad/utils.h"
-#include "graphics/gl/camera.h"
-#include "graphics/gl/program.h"
-#include "graphics/gl/utils.h"
+﻿#include <glfw/context.h>
+#include <glfw/window.h>
+#include <glad/utils.h>
+#include <gl/camera.h>
+#include <gl/program.h>
+#include <gl/utils.h>
 #include "containers.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -13,7 +13,6 @@ namespace refapp
     struct App
     {
         gl::Camera camera {};
-        gl::Program shaders {};
         glfw::Window window {};
         refapp::Containers containers {};
         double deltaTime = 0.0f;
@@ -83,12 +82,12 @@ namespace refapp
             else if ( window.getKey(GLFW_KEY_UP) == GLFW_PRESS )
             {
                 containers.mixPolarity += 0.01f;
-                shaders.setUniform("mixPolarity", containers.mixPolarity);
+                containers.shader.mixPolarity.setValue(containers.mixPolarity);
             }
             else if ( window.getKey(GLFW_KEY_DOWN) == GLFW_PRESS )
             {
                 containers.mixPolarity -= 0.01f;
-                shaders.setUniform("mixPolarity", containers.mixPolarity);
+                containers.shader.mixPolarity.setValue(containers.mixPolarity);
             }
 
             const float cameraSpeed = 2.5f * float(deltaTime);
@@ -124,29 +123,20 @@ namespace refapp
             window.setCursorDisabledInputMode();
         }
 
-        void loadShaders()
-        {
-            shaders.create();
-            shaders.attachShader(gl::vertexShaderFromFile("res/shader/vertex.glsl"));
-            shaders.attachShader(gl::fragmentShaderFromFile("res/shader/fragment.glsl"));
-            shaders.link();
-        }
-
         void run()
         {
             glfw::Context glfwContext {};
             createMainWindow();
-            loadShaders();
-            containers.load(shaders);
+            containers.load();
             
             while ( !window.shouldClose() )
             {
                 updateDelta();
                 processInput();
                 clearWindow();
-                camera.update(shaders);
+                camera.update(containers.shader);
 
-                containers.draw(shaders);
+                containers.draw();
 
                 gl::unbind();
                 window.pollEvents();

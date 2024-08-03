@@ -10,6 +10,6 @@ uniform float mixPolarity;
 
 void main()
 {
-	FragColor = mix(texture(texture0, TexCoord),
-				    texture(texture1, TexCoord), mixPolarity);
+    FragColor = mix(texture(texture0, TexCoord),
+                    texture(texture1, TexCoord), mixPolarity);
 };

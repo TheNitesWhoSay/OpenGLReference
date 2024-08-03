@@ -5,13 +5,6 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "",
-      "name": "CMakeLists.txt",
-      "currentDir": "${workspaceRoot}"
-    },
-    {
-      "type": "default",
-      "project": "CMakeLists.txt",
       "projectTarget": "OpenGLReference.exe",
       "name": "OpenGLReference.exe",
       "currentDir": "${workspaceRoot}"

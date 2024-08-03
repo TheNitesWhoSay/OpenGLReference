@@ -1,6 +1,6 @@
 #pragma once
 #include <glad/glad.h>
-#include <glm/glm.hpp>
+#include "unique_resource.h"
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -9,18 +9,20 @@
 
 namespace gl
 {
+    class Program;
+
     class Shader
     {
-        GLuint shaderId = 0;
+        unique_resource<GLuint> shaderId = 0;
 
         std::basic_string<GLchar> getInfoLog()
         {
             GLint logLength = 0;
-            glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &logLength);
+            glGetShaderiv(*shaderId, GL_INFO_LOG_LENGTH, &logLength);
             if ( logLength > 0 )
             {
                 auto logText = std::basic_string<GLchar>(logLength, static_cast<GLchar>('\0'));
-                glGetShaderInfoLog(shaderId, logLength, NULL, (GLchar*)logText.data());
+                glGetShaderInfoLog(*shaderId, logLength, NULL, (GLchar*)logText.data());
                 if ( logLength > 0 )
                     return logText;
             }
@@ -35,9 +37,9 @@ namespace gl
             vertex = GL_VERTEX_SHADER
         };
 
-        Shader() = delete;
-        Shader(Shader &) = delete;
-        Shader & operator=(const Shader &) = delete;
+        Shader() = default;
+        Shader(Shader &&) noexcept = default;
+        Shader & operator=(Shader &&) = default;
 
         Shader(Shader::Type type, const char* source, size_t sourceLength, bool requireNonEmpty)
         {
@@ -46,11 +48,12 @@ namespace gl
 
             GLint length = static_cast<GLint>(sourceLength);
             shaderId = glCreateShader(static_cast<GLenum>(type));
-            glShaderSource(shaderId, 1, (const GLchar* const*)&source, &length);
-            glCompileShader(shaderId);
+            //logger.info() << std::string_view(source, length);
+            glShaderSource(*shaderId, 1, (const GLchar* const*)&source, &length);
+            glCompileShader(*shaderId);
 
             GLint status = 0;
-            glGetShaderiv(shaderId, GL_COMPILE_STATUS, &status);
+            glGetShaderiv(*shaderId, GL_COMPILE_STATUS, &status);
             if ( status == GL_FALSE )
                 throw std::runtime_error("Failed to compile shader: \n\n" + getInfoLog());
         }
@@ -58,24 +61,15 @@ namespace gl
         Shader(Shader::Type type, std::string_view source, bool requireNonEmpty = true)
             : Shader(type, source.data(), source.size(), requireNonEmpty) {}
 
-        Shader(Shader && other) noexcept : shaderId(other.shaderId) {
-            other.shaderId = 0;
-        }
-
-        Shader & operator=(Shader && other) noexcept {
-            shaderId = other.shaderId;
-            other.shaderId = 0;
-        }
-
         ~Shader()
         {
             if ( shaderId != 0 )
-                glDeleteShader(shaderId);
+                glDeleteShader(*shaderId);
         }
 
-        GLuint getShaderId() { return shaderId; }
+        friend class gl::Program; // Program requires access to the underlying shaderId for the attach function and to perform diagnostics
     };
-
+    
     template <Shader::Type ShaderType>
     Shader shaderFromFile(const std::string & filePath, bool requireNonEmpty = true)
     {
@@ -97,4 +91,5 @@ namespace gl
     {
         return shaderFromFile<Shader::Type::fragment>(filePath, requireNonEmpty);
     }
+
 }

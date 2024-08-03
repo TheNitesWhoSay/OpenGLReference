@@ -10,8 +10,31 @@ namespace refapp
 {
     class Containers
     {
-        gl::Textures texture0 {};
-        gl::Textures texture1 {};
+        struct Shader : gl::Program
+        {
+            gl::uniform::Mat4 view {"view"};
+            gl::uniform::Mat4 model {"model"};
+            gl::uniform::Mat4 projection {"projection"};
+            gl::uniform::Float mixPolarity {"mixPolarity"};
+            gl::uniform::Int texture0 {"texture0"};
+            gl::uniform::Int texture1 {"texture1"};
+
+            void load() {
+                gl::Program::create();
+                gl::Program::attachShader(gl::shaderFromFile<gl::Shader::Type::vertex>("res/shader/vertex.glsl"));
+                gl::Program::attachShader(gl::shaderFromFile<gl::Shader::Type::fragment>("res/shader/fragment.glsl"));
+                gl::Program::link();
+                gl::Program::use();
+                gl::Program::findUniforms(view, model, projection, mixPolarity, texture0, texture1);
+                view.loadIdentity();
+                model.loadIdentity();
+                projection.loadIdentity();
+                mixPolarity.setValue(0.2f);
+            }
+        };
+
+        gl::Texture texture0 {};
+        gl::Texture texture1 {};
         GLuint vao = 0;
         GLuint vbo = 0;
 
@@ -69,26 +92,32 @@ namespace refapp
 
         void bind()
         {
-            texture0.bind(GL_TEXTURE0);
-            texture1.bind(GL_TEXTURE1);
             glBindVertexArray(vao);
+            texture0.bindToSlot(GL_TEXTURE0);
+            texture1.bindToSlot(GL_TEXTURE1);
         }
 
     public:
 
+        Shader shader {};
         float mixPolarity = 0.2f;
 
-        void load(gl::Program & shaders)
+        void load()
         {
-            texture0.load("res/texture/container.jpg", {
-                .format = GL_RGB,
-                .minFilter = GL_NEAREST,
-                .magFilter = GL_NEAREST
-            });
-
-            texture1.load("res/texture/awesomeface.png", {
-                .format = GL_RGBA
-            });
+            shader.load();
+            texture0.genTexture();
+            texture0.bind();
+            texture0.loadImage2D("res/texture/container.jpg", gl::Texture::Image2D{.internalformat = GL_RGB, .format = GL_RGB});
+            texture0.setMinMagFilters(GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            
+            texture1.genTexture();
+            texture1.bind();
+            texture1.loadImage2D("res/texture/awesomeface.png", gl::Texture::Image2D{.internalformat = GL_RGB, .format = GL_RGBA});
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
             glGenVertexArrays(1, &vao);
             glGenBuffers(1, &vbo);
@@ -101,13 +130,13 @@ namespace refapp
             glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(GLfloat)));
             glEnableVertexAttribArray(2); // Texture
 
-            shaders.use();
-            shaders.setUniform("texture0", 0);
-            shaders.setUniform("texture1", 1);
-            shaders.setUniform("mixPolarity", mixPolarity);
+            shader.use();
+            shader.texture0.setValue(0);
+            shader.texture1.setValue(1);
+            shader.mixPolarity.setValue(mixPolarity);
         }
 
-        void draw(gl::Program & shaders)
+        void draw()
         {
             bind();
 
@@ -122,7 +151,7 @@ namespace refapp
                 else
                     model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 
-                shaders.setUniform("model", model);
+                shader.model.setMat4(glm::value_ptr(model));
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

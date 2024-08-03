@@ -1,6 +1,8 @@
 #pragma once
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <gl/uniform.h>
 #include "program.h"
 
 namespace gl
@@ -21,13 +23,14 @@ namespace gl
         glm::vec3 right = glm::normalize(glm::cross(upDirection, direction));
         glm::vec3 up = glm::cross(direction, right);
 
-        void update(gl::Program & shaders)
+        template <typename T>
+        void update(T & shader)
         {
             glm::mat4 view = glm::lookAt(pos, pos + front, up);
             glm::mat4 projection = glm::perspective(glm::radians(zoom), 800.0f/600.0f, 0.1f, 100.0f);
 
-            shaders.setUniform("view", view);
-            shaders.setUniform("projection", projection);
+            shader.view.setMat4(glm::value_ptr(view));
+            shader.projection.setMat4(glm::value_ptr(projection));
         }
 
     };

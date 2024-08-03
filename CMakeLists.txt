@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD 20)
 project("OpenGLReference")
 
 find_package(glad CONFIG REQUIRED)
+get_target_property(GLAD_INCLUDE_DIRS glad::glad INTERFACE_INCLUDE_DIRECTORIES)
+include_directories(${GLAD_INCLUDE_DIRS})
+
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
@@ -20,5 +23,28 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(stb)
 include_directories(${stb_SOURCE_DIR}/include)
 
-add_executable(OpenGLReference "source/main.cpp"  "source/graphics/glfw/context.h" "source/graphics/glfw/window.h" "source/graphics/glad/utils.h" "source/graphics/gl/utils.h" "source/graphics/gl/camera.h" "source/graphics/gl/shader.h" "source/graphics/gl/texture.h" "source/containers.h" "source/graphics/stb/stb.cpp")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/graphics/)
+
+set(Headers
+  "source/graphics/glfw/context.h"
+  "source/graphics/glfw/window.h"
+  "source/graphics/glad/utils.h"
+  "source/graphics/gl/base.h"
+  "source/graphics/gl/camera.h"
+  "source/graphics/gl/context_semaphore.h"
+  "source/graphics/gl/palette.h"
+  "source/graphics/gl/program.h"
+  "source/graphics/gl/shader.h"
+  "source/graphics/gl/texture.h"
+  "source/graphics/gl/uniform.h"
+  "source/graphics/gl/unique_resource.h"
+  "source/graphics/gl/utils.h"
+  "source/graphics/gl/vertices.h"
+)
+set(Sources
+  "source/main.cpp"
+  "source/graphics/stb/stb.cpp"
+)
+
+add_executable(OpenGLReference ${Sources} ${Headers})
 target_link_libraries(OpenGLReference glad::glad glfw glm::glm)
