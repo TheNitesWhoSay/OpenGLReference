@@ -32,27 +32,27 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(rarecpp)
 include_directories(${rarecpp_SOURCE_DIR}/include)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/graphics/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/)
 
 set(Headers
-  "source/graphics/glfw/context.h"
-  "source/graphics/glfw/window.h"
-  "source/graphics/glad/utils.h"
-  "source/graphics/gl/base.h"
-  "source/graphics/gl/camera.h"
-  "source/graphics/gl/context_semaphore.h"
-  "source/graphics/gl/palette.h"
-  "source/graphics/gl/program.h"
-  "source/graphics/gl/shader.h"
-  "source/graphics/gl/texture.h"
-  "source/graphics/gl/uniform.h"
-  "source/graphics/gl/unique_resource.h"
-  "source/graphics/gl/utils.h"
-  "source/graphics/gl/vertices.h"
+  "src/graphics/glfw/context.h"
+  "src/graphics/glfw/window.h"
+  "src/graphics/glad/utils.h"
+  "src/graphics/gl/base.h"
+  "src/graphics/gl/camera.h"
+  "src/graphics/gl/context_semaphore.h"
+  "src/graphics/gl/palette.h"
+  "src/graphics/gl/program.h"
+  "src/graphics/gl/shader.h"
+  "src/graphics/gl/texture.h"
+  "src/graphics/gl/uniform.h"
+  "src/graphics/gl/unique_resource.h"
+  "src/graphics/gl/utils.h"
+  "src/graphics/gl/vertices.h"
 )
 set(Sources
-  "source/main.cpp"
-  "source/graphics/stb/stb.cpp"
+  "src/main.cpp"
+  "src/graphics/stb/stb.cpp"
 )
 
 add_executable(OpenGLReference ${Sources} ${Headers})
