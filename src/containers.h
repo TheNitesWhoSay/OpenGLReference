@@ -1,6 +1,7 @@
 #pragma once
 #include <gl/program.h>
 #include <gl/texture.h>
+#include <gl/utils.h>
 #include <gl/vertices.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -23,8 +24,8 @@ namespace refapp
 
             void load() {
                 gl::Program::create();
-                gl::Program::attachShader(gl::shaderFromFile<gl::Shader::Type::vertex>("res/shader/vertex.glsl"));
-                gl::Program::attachShader(gl::shaderFromFile<gl::Shader::Type::fragment>("res/shader/fragment.glsl"));
+                gl::Program::attachShader(gl::shaderFromFile<gl::Shader::Type::vertex>("res/shader/container-vertex.glsl"));
+                gl::Program::attachShader(gl::shaderFromFile<gl::Shader::Type::fragment>("res/shader/container-fragment.glsl"));
                 gl::Program::link();
                 gl::Program::use();
                 gl::Program::findUniforms(view, model, projection, mixPolarity, texture0, texture1);
@@ -118,6 +119,8 @@ namespace refapp
             texture1.generateMipmap();
             texture1.setTextureWrap(GL_REPEAT);
 
+            gl::Texture::bindDefault();
+
             shader.use();
             shader.texture0.setValue(0);
             shader.texture1.setValue(1);
@@ -130,6 +133,7 @@ namespace refapp
             verts.vertices.insert(verts.vertices.begin(), std::begin(this->verticies), std::end(this->verticies));
             verts.bind();
             verts.bufferData(gl::UsageHint::StaticDraw);
+            gl::unbind();
         }
 
         void draw()

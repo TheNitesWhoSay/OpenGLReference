@@ -94,10 +94,9 @@ namespace gl
 
         void bind()
         {
-            GL_INVALID_ENUM;
             glBindTexture(tex->type, tex->id);
             if ( auto error = glGetError(); error != GL_NO_ERROR ) // GL_INVALID_FRAMEBUFFER_OPERATION = 1286
-                int a = 0;
+                throw std::runtime_error("Error binding texture");
         }
 
         void bindToSlot(GLenum textureUnit)

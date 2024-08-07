@@ -2,11 +2,18 @@
 #include <glfw/window.h>
 #include <glad/utils.h>
 #include <gl/camera.h>
+#include <gl/font.h>
+#include <gl/fps.h>
 #include <gl/program.h>
 #include <gl/utils.h>
-#include "containers.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include "containers.h"
+#include <chrono>
+#include <cstdint>
+#include <iostream>
+#include <optional>
+#include <stdexcept>
 
 namespace refapp
 {
@@ -112,7 +119,9 @@ namespace refapp
 
             window.makeContextCurrent();
             glad::loadGL();
-
+            
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             gl::enableDepthTesting();
             gl::setViewport(0, 0, initialWidth, initialHeight);
 
@@ -128,15 +137,26 @@ namespace refapp
             glfw::Context glfwContext {};
             createMainWindow();
             containers.load();
-            
+
+            auto teal16Pt = gl::Font::load("res/fonts/Arial.ttf", 0, 16*64, 144, 144);
+            teal16Pt->setColor(0.f, 1.f, 1.f);
+            auto black16pt = gl::Font::load("res/fonts/Arial.ttf", 0, 16*64, 144, 144);
+            black16pt->setColor(0.f, 0.f, 0.f);
+
+            gl::Fps fps {};
             while ( !window.shouldClose() )
             {
+                fps.update(std::chrono::system_clock::now());
+                containers.shader.use();
                 updateDelta();
                 processInput();
                 clearWindow();
-                camera.update(containers.shader);
 
+                camera.update(containers.shader);
                 containers.draw();
+                
+                teal16Pt->drawAffixedText<gl::Align::Right>(790.0f, 10.0f, fps.displayNumber, " fps", "");
+                black16pt->drawText<gl::Align::Center>(400.f, 550.f, "The quick brown fix jumped over the lazy dog.");
 
                 gl::unbind();
                 window.pollEvents();

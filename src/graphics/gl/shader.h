@@ -48,7 +48,6 @@ namespace gl
 
             GLint length = static_cast<GLint>(sourceLength);
             shaderId = glCreateShader(static_cast<GLenum>(type));
-            //logger.info() << std::string_view(source, length);
             glShaderSource(*shaderId, 1, (const GLchar* const*)&source, &length);
             glCompileShader(*shaderId);
 

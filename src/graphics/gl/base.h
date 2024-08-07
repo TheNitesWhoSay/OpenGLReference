@@ -8,5 +8,19 @@
 
 namespace gl
 {
+    template <typename T>
+    struct Rect2D
+    {
+        T left {};
+        T top {};
+        T right {};
+        T bottom {};
+    };
 
+    template <typename T>
+    struct Size2D
+    {
+        T width {};
+        T height {};
+    };
 }

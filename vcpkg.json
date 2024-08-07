@@ -3,6 +3,9 @@
   "name": "open-gl-reference",
   "version": "0.1.0",
   "dependencies": [
+    "icu",
+    "freetype",
+    "harfbuzz",
     {
       "name": "glad",
       "platform": "windows"
