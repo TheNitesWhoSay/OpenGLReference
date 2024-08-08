@@ -12,8 +12,6 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
-#include <iostream>
-
 namespace gl
 {
     enum Align
