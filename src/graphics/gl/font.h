@@ -21,8 +21,17 @@ namespace gl
         Center
     };
 
-    class Font
+    struct Font
     {
+        struct Memory
+        {
+            std::vector<std::uint8_t> data;
+            Memory(size_t size) : data(size, std::uint8_t(0)) {}
+        };
+
+        std::shared_ptr<Memory> fontMemory = nullptr; // Fonts from memory must stay in scope for the life of the font
+
+    private:
         struct FtLibrary
         {
             FT_Library library = nullptr;
@@ -67,9 +76,9 @@ namespace gl
                 this->textColor.setVec4(red, green, blue, 1.f);
             }
         };
-            
+
+
         static inline FtLibrary ftLibrary {};
-        static inline TextShader textShader {};
         static inline gl::VertexVector<> textVertices {};
 
         FT_Face ftFontFace = nullptr;
@@ -106,6 +115,7 @@ namespace gl
         {
             std::vector<RenderGlyph> renderGlyphs {};
             gl::Size2D<GLfloat> dimensions {};
+            gl::Point2D<GLfloat> offset {};
 
             PrepareText(const std::string & utf8Text, bool renderTextures, FT_Face ftFontFace, hb_font_t* hbFont,
                 std::unordered_map<hb_codepoint_t, std::unique_ptr<gl::Texture>> & glyphCache)
@@ -126,8 +136,8 @@ namespace gl
 
                 renderGlyphs.reserve(glyphCount);
                 gl::Rect2D<GLfloat> boundingBox {
-                    .left = 0,
-                    .top = 0,
+                    .left = std::numeric_limits<GLfloat>::max(),
+                    .top = std::numeric_limits<GLfloat>::max(),
                     .right = std::numeric_limits<GLfloat>::min(),
                     .bottom = std::numeric_limits<GLfloat>::min()
                 };
@@ -143,8 +153,8 @@ namespace gl
                 
                     GLfloat width = glyph->bitmap.width;
                     GLfloat height = glyph->bitmap.rows;
-                    GLfloat left = x + (glyphPos[i].x_offset >> 6) + glyph->bitmap_left;
-                    GLfloat top = y + (glyphPos[i].y_offset >> 6) - glyph->bitmap_top + glyph->bitmap.rows;
+                    GLfloat left = x + ((glyphPos[i].x_offset >> 6) + glyph->bitmap_left);
+                    GLfloat top = y + ((glyphPos[i].y_offset >> 6) - glyph->bitmap_top);
                     GLfloat right = left + width;
                     GLfloat bottom = top + height;
                     if ( width == 0 ) // Presumed to be spacing, for which advance must be used to determine bounds
@@ -202,6 +212,8 @@ namespace gl
 
                 dimensions.width = boundingBox.right - boundingBox.left;
                 dimensions.height = boundingBox.bottom - boundingBox.top;
+                offset.x = boundingBox.left;
+                offset.y = boundingBox.top;
                 hb_buffer_destroy(buf);
             }
         };
@@ -211,6 +223,8 @@ namespace gl
         GLfloat blue = 0.f;
 
     public:
+        static inline TextShader textShader {};
+
         void setColor(GLfloat red, GLfloat green, GLfloat blue)
         {
             this->red = red;
@@ -219,6 +233,9 @@ namespace gl
         }
 
         Font(FT_Face ftFontFace, hb_font_t* hbFont) : ftFontFace(ftFontFace), hbFont(hbFont) {}
+
+        Font(FT_Face ftFontFace, hb_font_t* hbFont, std::shared_ptr<Memory> fontMemory)
+            : ftFontFace(ftFontFace), hbFont(hbFont), fontMemory(fontMemory) {}
 
         ~Font() { FT_Done_Face(ftFontFace); }
 
@@ -238,6 +255,22 @@ namespace gl
             return std::make_unique<Font>(ftFontFace, hbFont);
         }
 
+        static std::unique_ptr<Font> load(std::shared_ptr<Memory> fontMemory, FT_UInt width, FT_UInt height)
+        {
+            initTextRendering();
+
+            FT_Face ftFontFace = nullptr;
+            if ( FT_New_Memory_Face(ftLibrary.library, (const FT_Byte*)fontMemory->data.data(), fontMemory->data.size(), 0, &ftFontFace) )
+                throw std::runtime_error("Failed to load font face from font memory");
+
+            if ( FT_Set_Pixel_Sizes(ftFontFace, width, height) )
+                throw std::runtime_error("Failed to set font dimensions");
+                
+            hb_font_t* hbFont = hb_ft_font_create_referenced(ftFontFace);
+            hb_ft_font_set_funcs(hbFont);
+            return std::make_unique<Font>(ftFontFace, hbFont, fontMemory);
+        }
+
         gl::Size2D<GLfloat> measureText(const std::string & utf8Text)
         {
             auto preparedText = PrepareText {utf8Text, true, ftFontFace, hbFont, glyphCache};
@@ -247,22 +280,22 @@ namespace gl
         template <gl::Align Alignment = gl::Align::Left>
         void drawPreparedText(GLfloat x, GLfloat y, PrepareText & preparedText)
         {
-            auto & [renderGlyphs, dim] = preparedText;
+            auto & [renderGlyphs, dim, offset] = preparedText;
 
-            GLfloat xAdjust = 0;
+            GLfloat xAdjust = -offset.x;
             if constexpr ( Alignment == Align::Right)
-                xAdjust = -dim.width;
+                xAdjust -= dim.width;
             else if constexpr ( Alignment == Align::Center )
-                xAdjust = -dim.width/2.f;
+                xAdjust -= dim.width/2.f;
 
             textShader.use();
             textShader.setColor(red, green, blue);
             textShader.tex.setValue(0);
             textVertices.bind();
+            auto vertOffset = y - offset.y;
             for ( auto & glyph : renderGlyphs )
             {
                 auto glyphHeight = glyph.rc.bottom-glyph.rc.top;
-                auto vertOffset = y + dim.height - glyphHeight;
                 glyph.tex->bindToSlot(GL_TEXTURE0);
                 textVertices.vertices.assign({
                     x+glyph.rc.left  + xAdjust, glyph.rc.bottom + vertOffset, 0.0f, 1.0f,
