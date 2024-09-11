@@ -11,4 +11,4 @@ void main()
         discard;
     vec4 sampled = vec4(1.0, 1.0, 1.0, texture(tex, TexCoords).r);
     color = textColor * sampled;
-}  
+}
