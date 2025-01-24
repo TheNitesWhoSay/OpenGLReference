@@ -156,7 +156,7 @@ namespace refapp
                 containers.draw();
                 
                 teal16Pt->drawAffixedText<gl::Align::Right>(790.0f, 10.0f, fps.displayNumber, " fps", "");
-                black16pt->drawText<gl::Align::Center>(400.f, 550.f, "The quick brown fix jumped over the lazy dog.");
+                black16pt->drawText<gl::Align::Center>(400.f, 550.f, "The quick brown fox jumped over the lazy dog.");
 
                 gl::unbind();
                 window.pollEvents();
