@@ -36,8 +36,10 @@ namespace gl
     private:
         struct FtLibrary
         {
-            FT_Library library = nullptr;
-
+            FT_Library library;
+            
+            FtLibrary() : library(nullptr) {}
+            
             ~FtLibrary()
             {
                 if ( library != nullptr )
@@ -56,12 +58,16 @@ namespace gl
 
         struct TextShader : gl::Program
         {
-            gl::uniform::Mat2 glyphScaling {"glyphScaling"};
-            gl::uniform::Mat4 textPosToNdc {"textPosToNdc"};
-            gl::uniform::Vec2 textPos {"textOrigin"};
-            gl::uniform::Int tex {"tex"};
-            gl::uniform::Vec4 textColor {"textColor"};
-
+            gl::uniform::Mat2 glyphScaling;
+            gl::uniform::Mat4 textPosToNdc;
+            gl::uniform::Vec2 textPos;
+            gl::uniform::Int tex;
+            gl::uniform::Vec4 textColor;
+            
+            TextShader()
+                : glyphScaling{"glyphScaling"}, textPosToNdc{"textPosToNdc"}, textPos{"textOrigin"}, tex{"tex"}, textColor{"textColor"}
+            {}
+            
             void load()
             {
                 gl::Program::create();
@@ -84,13 +90,18 @@ namespace gl
 
         struct ClippedTextShader : gl::Program
         {
-            gl::uniform::Mat2 glyphScaling {"glyphScaling"};
-            gl::uniform::Mat4 textPosToNdc {"textPosToNdc"};
-            gl::uniform::Vec2 textPos {"textOrigin"};
-            gl::uniform::Int tex {"tex"};
-            gl::uniform::Vec4 textColor {"textColor"};
-            gl::uniform::Vec2 lowerRightBound {"lowerRightBound"};
-
+            gl::uniform::Mat2 glyphScaling;
+            gl::uniform::Mat4 textPosToNdc;
+            gl::uniform::Vec2 textPos;
+            gl::uniform::Int tex;
+            gl::uniform::Vec4 textColor;
+            gl::uniform::Vec2 lowerRightBound;
+            
+            ClippedTextShader()
+                : glyphScaling{"glyphScaling"}, textPosToNdc{"textPosToNdc"}, textPos{"textOrigin"}, tex{"tex"}, textColor{"textColor"},
+                lowerRightBound {"lowerRightBound"}
+            {}
+            
             void load()
             {
                 gl::Program::create();
@@ -219,7 +230,7 @@ namespace gl
                     {
                         if ( found != glyphCache.end() )
                         {
-                            renderGlyphs.emplace_back(found->second.get(), gl::Rect2D<GLfloat>{left, top, right, bottom}).tex;
+                            renderGlyphs.emplace_back(found->second.get(), gl::Rect2D<GLfloat>{left, top, right, bottom});
                         }
                         else
                         {
@@ -429,7 +440,7 @@ namespace gl
                             {
                                 if ( found != glyphCache.end() )
                                 {
-                                    renderLine.renderGlyphs.emplace_back(found->second.get(), gl::Rect2D<GLfloat>{left, top, right, bottom}).tex;
+                                    renderLine.renderGlyphs.emplace_back(found->second.get(), gl::Rect2D<GLfloat>{left, top, right, bottom});
                                 }
                                 else
                                 {
