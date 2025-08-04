@@ -8,7 +8,7 @@
     "harfbuzz",
     {
       "name": "glad",
-      "platform": "windows"
+      "features": ["extensions", "gl-api-33"]
     },
     "glfw3",
     "glm",
