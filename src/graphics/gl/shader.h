@@ -77,11 +77,19 @@ namespace gl
     Shader shaderFromFile(const std::string & filePath, bool requireNonEmpty = true)
     {
         std::ifstream shaderFile {};
-        shaderFile.exceptions(std::ios_base::badbit | std::ios_base::failbit);
         shaderFile.open(filePath);
         if ( !shaderFile )
-            throw std::runtime_error("FNF");
+        {
+            shaderFile.clear();
+            shaderFile.open("../" + filePath); // Try one directory up
+            if ( !shaderFile )
+                throw std::runtime_error("File not found!");
+        }
+
         std::vector<char> buffer{std::istreambuf_iterator<char>(shaderFile), std::istreambuf_iterator<char>()};
+        if ( !shaderFile )
+            throw std::runtime_error("Read error!");
+
         return Shader(ShaderType, buffer.data(), buffer.size(), requireNonEmpty);
     }
 

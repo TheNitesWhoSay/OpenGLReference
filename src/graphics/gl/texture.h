@@ -165,7 +165,11 @@ namespace gl
             int channels = 0;
             stbi_uc* textureData = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
             if ( !textureData )
-                throw std::logic_error("Failed to load texture!");
+            {
+                textureData = stbi_load(("../" + filePath).c_str(), &width, &height, &channels, 0); // Try one directory up
+                if ( !textureData )
+                    throw std::logic_error("Failed to load texture!");
+            }
 
             image2d.data = textureData;
             image2d.width = width;
