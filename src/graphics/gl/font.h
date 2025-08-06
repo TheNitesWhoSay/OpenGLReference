@@ -9,8 +9,10 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <hb-ft.h>
 #include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
+#include <vector>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
