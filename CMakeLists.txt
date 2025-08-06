@@ -15,6 +15,8 @@ find_package(harfbuzz CONFIG REQUIRED)
 get_target_property(HARFBUZZ_INCLUDE_DIRS harfbuzz::harfbuzz INTERFACE_INCLUDE_DIRECTORIES)
 include_directories(${HARFBUZZ_INCLUDE_DIRS})
 
+find_package(WebP CONFIG REQUIRED)
+
 find_package(ICU COMPONENTS uc i18n REQUIRED)
 
 find_package(glad CONFIG REQUIRED)
@@ -71,7 +73,7 @@ add_executable(OpenGLReference ${Sources} ${Headers})
 
 find_package(OpenGL REQUIRED)
 if (WIN32)
-target_link_libraries(OpenGLReference PRIVATE glad::glad glfw glm::glm Freetype::Freetype harfbuzz::harfbuzz harfbuzz::harfbuzz-subset ICU::uc ICU::i18n ${OPENGL_LIBRARIES} Comctl32.lib Winmm.lib Msimg32.lib)
+target_link_libraries(OpenGLReference PRIVATE glad::glad glfw glm::glm Freetype::Freetype harfbuzz::harfbuzz harfbuzz::harfbuzz-subset ICU::uc ICU::i18n WebP::webp WebP::webpdecoder WebP::webpdemux ${OPENGL_LIBRARIES} Comctl32.lib Winmm.lib Msimg32.lib)
 else ()
-target_link_libraries(OpenGLReference PRIVATE glad::glad glfw glm::glm Freetype::Freetype harfbuzz::harfbuzz harfbuzz::harfbuzz-subset ICU::uc ICU::i18n ${OPENGL_LIBRARIES})
+target_link_libraries(OpenGLReference PRIVATE glad::glad glfw glm::glm Freetype::Freetype harfbuzz::harfbuzz harfbuzz::harfbuzz-subset ICU::uc ICU::i18n WebP::webp WebP::webpdecoder WebP::webpdemux ${OPENGL_LIBRARIES})
 endif ()

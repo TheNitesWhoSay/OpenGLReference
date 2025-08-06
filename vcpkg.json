@@ -8,10 +8,11 @@
     "harfbuzz",
     {
       "name": "glad",
-      "features": ["extensions", "gl-api-33"]
+      "features": [ "extensions", "gl-api-33" ]
     },
     "glfw3",
     "glm",
+    "libwebp",
     "stb"
   ],
   "builtin-baseline": "821100d967e1737d96414a308e3f7cbe0d1abf18"
