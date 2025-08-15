@@ -98,10 +98,11 @@ namespace gl
             gl::uniform::Int tex;
             gl::uniform::Vec4 textColor;
             gl::uniform::Vec2 lowerRightBound;
+            gl::uniform::Float verticalFlip;
             
             ClippedTextShader()
                 : glyphScaling{"glyphScaling"}, textPosToNdc{"textPosToNdc"}, textPos{"textOrigin"}, tex{"tex"}, textColor{"textColor"},
-                lowerRightBound {"lowerRightBound"}
+                lowerRightBound{"lowerRightBound"}, verticalFlip{"verticalFlip"}
             {}
             
             void load()
@@ -111,11 +112,12 @@ namespace gl
                 gl::Program::attachShader(gl::shaderFromFile<gl::Shader::Type::fragment>("res/shader/clipped-text-fragment.glsl"));
                 gl::Program::link();
                 gl::Program::use();
-                gl::Program::findUniforms(glyphScaling, textPosToNdc, textPos, tex, textColor, lowerRightBound);
+                gl::Program::findUniforms(glyphScaling, textPosToNdc, textPos, tex, textColor, lowerRightBound, verticalFlip);
                 this->glyphScaling.setMat2(glm::mat2x2({2.f/800.f, 0.f}, {0.f, -2.f/600.f}));
                 this->textPosToNdc.setMat4(glm::ortho(0.0f, 800.0f, 600.0f, 0.0f));
                 this->textPos.setVec2(0.f, 0.f);
                 this->textColor.setVec4(0.f, 0.f, 0.f, 1.f);
+                this->verticalFlip.setValue(1.0f);
             }
 
             void setColor(GLfloat red, GLfloat green, GLfloat blue)
@@ -532,6 +534,22 @@ namespace gl
             hb_font_t* hbFont = hb_ft_font_create_referenced(ftFontFace);
             hb_ft_font_set_funcs(hbFont);
             return std::make_unique<Font>(ftFontFace, hbFont, fontMemory);
+        }
+
+        static std::unique_ptr<Font> loadStatic(const std::uint8_t* staticMemory, std::size_t size, FT_UInt width, FT_UInt height)
+        {
+            initTextRendering();
+
+            FT_Face ftFontFace = nullptr;
+            if ( FT_New_Memory_Face(ftLibrary.library, (const FT_Byte*)staticMemory, size, 0, &ftFontFace) )
+                throw std::runtime_error("Failed to load font face from font memory");
+
+            if ( FT_Set_Pixel_Sizes(ftFontFace, width, height) )
+                throw std::runtime_error("Failed to set font dimensions");
+
+            hb_font_t* hbFont = hb_ft_font_create_referenced(ftFontFace);
+            hb_ft_font_set_funcs(hbFont);
+            return std::make_unique<Font>(ftFontFace, hbFont);
         }
 
         gl::Size2D<GLfloat> measureText(const std::string & utf8Text)
