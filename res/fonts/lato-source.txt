@@ -1,0 +1,3 @@
+https://fonts.google.com/specimen/Lato
+In Lato.zip: Lato-Regular.ttf (renamed in this project as Lato.ttf)
+In Lato.zip: OFL.txt (license, which is also found at https://fonts.google.com/specimen/Lato/license)

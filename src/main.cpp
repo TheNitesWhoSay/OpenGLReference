@@ -138,9 +138,9 @@ namespace refapp
             createMainWindow();
             containers.load();
 
-            auto teal16Pt = gl::Font::load("res/fonts/Arial.ttf", 0, 16*64, 144, 144);
+            auto teal16Pt = gl::Font::load("res/fonts/Lato.ttf", 0, 16*64, 144, 144);
             teal16Pt->setColor(0.f, 1.f, 1.f);
-            auto black16pt = gl::Font::load("res/fonts/Arial.ttf", 0, 16*64, 144, 144);
+            auto black16pt = gl::Font::load("res/fonts/Lato.ttf", 0, 16*64, 144, 144);
             black16pt->setColor(0.f, 0.f, 0.f);
 
             gl::Fps fps {};
@@ -154,7 +154,7 @@ namespace refapp
 
                 camera.update(containers.shader);
                 containers.draw();
-                
+
                 teal16Pt->drawAffixedText<gl::Align::Right>(790.0f, 10.0f, fps.displayNumber, " fps", "");
                 black16pt->drawText<gl::Align::Center>(400.f, 550.f, "The quick brown fox jumped over the lazy dog.");
 
