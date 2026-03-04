@@ -46,6 +46,8 @@ include_directories(${rarecpp_SOURCE_DIR}/include)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/)
 
+add_compile_definitions(PREFERRED_WORKING_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(Headers
   "src/graphics/glfw/context.h"
   "src/graphics/glfw/window.h"

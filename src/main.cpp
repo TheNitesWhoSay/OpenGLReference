@@ -11,6 +11,7 @@
 #include "containers.h"
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
@@ -167,8 +168,18 @@ namespace refapp
     };
 }
 
+void resolveDirectories() // Ensures the res/ directory can be found from the current working directory
+{
+    #ifdef PREFERRED_WORKING_DIRECTORY
+    std::filesystem::current_path(PREFERRED_WORKING_DIRECTORY); // Updates the current working directory
+    #endif
+    if ( !std::filesystem::exists(std::filesystem::path("res/")) )
+        throw std::runtime_error("Could not locate the \"res/\" directory in the current working directory");
+}
+
 int main()
 {
+    resolveDirectories();
     refapp::App{}.run();
     return 0;
 }
